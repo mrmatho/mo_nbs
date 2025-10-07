@@ -14,6 +14,12 @@ app = marimo.App(width="full", auto_download=["html"])
 
 @app.cell
 def _(mo):
+    mo.md("# Attendance Tier Analysis")
+    return
+
+
+@app.cell
+def _(mo):
     csv_f = mo.ui.file(
         kind="area",
         label="Upload Compass Attendance CSV file here.",
@@ -103,15 +109,6 @@ def _(mo, yr_df):
         # Tier 3 Student list
 
         tier_3_students = yr_df[yr_df["Attendance Tier"] == "Tier 3"]
-        tier_3_students = tier_3_students[
-            [
-                "StudentName",
-                "YearLevel",
-                "TotalInclass",
-                "TotalOutClass",
-                "SchlPercentage",
-            ]
-        ]
 
         # Drop students without a Year level and sort by SchlPercentage
         tier_3_students = tier_3_students.dropna(subset=["YearLevel"]).sort_values(
@@ -141,9 +138,10 @@ def _(mo, yr_df):
 
 
 @app.cell
-def _(df, mo, tier_2_students, tier_3_students, yr_df):
-    if len(df) > 0:
-        mo.hstack(
+def _(mo, tier_2_students, tier_3_students, yr_df):
+    data_frames_out = ""
+    if len(yr_df) > 0:
+        data_frames_out = mo.vstack(
             [
                 mo.md("## Tier 3 Students (All Data)"),
                 tier_3_students,
@@ -153,6 +151,8 @@ def _(df, mo, tier_2_students, tier_3_students, yr_df):
                 yr_df,
             ]
         )
+
+    data_frames_out
     return
 
 
