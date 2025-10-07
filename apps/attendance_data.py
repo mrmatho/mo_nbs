@@ -59,7 +59,6 @@ def _(df, mo):
 def _(df, px, yr_lvl_dropdown):
     if yr_lvl_dropdown.value:
         yr_df = df[df["YearLevel"] == yr_lvl_dropdown.value]
-        print("filtered")
     else:
         yr_df = df
 
@@ -86,7 +85,6 @@ def _(mo, yr_df):
                 "YearLevel",
                 "TotalInclass",
                 "TotalOutClass",
-                "ActdPercentage",
                 "SchlPercentage",
             ]
         ]
@@ -98,12 +96,19 @@ def _(mo, yr_df):
         mo.md("# Tier 3 Students")
         for index, row in tier_3_students.iterrows():
             out += f"""
-                ### {row["StudentName"]} ({row["YearLevel"]})
-                - Total In-class Days: {row["TotalInclass"]}
-                - Total Out-of-class Days: {row["TotalOutClass"]}
-                - Actual Attendance Percentage: {row["ActdPercentage"]}%
-                - **School Attendance Percentage: {row["SchlPercentage"]}%**
-                """
+                - {row["StudentName"]} ({row["SchlPercentage"]}%)"""
+
+        out += f"\n\nTotal Tier 3 Students: {len(tier_3_students)}"
+
+        out += f"\n\n## Tier 2 Students"
+        tier_2_students = yr_df[yr_df["Attendance Tier"] == "Tier 2"].dropna(
+            subset=["YearLevel"]
+        )
+
+        for index, row in tier_2_students.iterrows():
+            out += f"""
+                - {row["StudentName"]} ({row["SchlPercentage"]}%)"""
+        out += f"\n\nTotal Tier 2 Students: {len(tier_2_students)}"
 
     mo.md(out)
     return
