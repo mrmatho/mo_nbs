@@ -20,6 +20,15 @@ def _(mo):
 
 @app.cell
 def _(mo):
+    mo.md("""The file you need is found in Compass > Whole School (or just a Year Level) > Attendance By Students > Export.
+
+    Don't forget to set the date range you want first!
+    """)
+    return
+
+
+@app.cell
+def _(mo):
     csv_f = mo.ui.file(
         kind="area",
         label="Upload Compass Attendance CSV file here.",
