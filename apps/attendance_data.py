@@ -71,7 +71,8 @@ def _(df, mo):
             label="Select Year Level",
             options=df["YearLevel"].dropna().unique().tolist(),
         )
-    yr_lvl_dropdown
+
+    mo.vstack([mo.md("## Filter by Year Level"), yr_lvl_dropdown])
     return (yr_lvl_dropdown,)
 
 
