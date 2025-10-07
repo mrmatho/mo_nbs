@@ -89,25 +89,27 @@ def _(mo, yr_df):
             ]
         ]
 
-        # Drop students without a Year level
-        tier_3_students = tier_3_students.dropna(subset=["YearLevel"])
+        # Drop students without a Year level and sort by SchlPercentage
+        tier_3_students = tier_3_students.dropna(subset=["YearLevel"]).sort_values(
+            by="SchlPercentage"
+        )
 
         # Output mo.md cells for each row in the dataframe
-        mo.md("# Tier 3 Students")
+        mo.md("# Tier 3 Students\n\n")
         for index, row in tier_3_students.iterrows():
-            out += f"""
-                - {row["StudentName"]} ({row["SchlPercentage"]}%)"""
+            out += f"- **{row['StudentName']}** *{row['SchlPercentage']}%*\n"
 
         out += f"\n\nTotal Tier 3 Students: {len(tier_3_students)}"
 
         out += f"\n\n## Tier 2 Students"
-        tier_2_students = yr_df[yr_df["Attendance Tier"] == "Tier 2"].dropna(
-            subset=["YearLevel"]
+        tier_2_students = (
+            yr_df[yr_df["Attendance Tier"] == "Tier 2"]
+            .dropna(subset=["YearLevel"])
+            .sort_values(by="SchlPercentage")
         )
 
         for index, row in tier_2_students.iterrows():
-            out += f"""
-                - {row["StudentName"]} ({row["SchlPercentage"]}%)"""
+            out += f"- **{row['StudentName']}** *{row['SchlPercentage']}%*\n"
         out += f"\n\nTotal Tier 2 Students: {len(tier_2_students)}"
 
     mo.md(out)
