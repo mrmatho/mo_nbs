@@ -114,7 +114,7 @@ def _(alt, df, yr_lvl_dropdown):
 
 @app.cell
 def _(mo, yr_df):
-    out = "## Tier 3 Students"
+    out_t3 = "## Tier 3 Students"
     if len(yr_df) > 0:
         # Tier 3 Student list
 
@@ -126,13 +126,13 @@ def _(mo, yr_df):
         )
 
         # Output mo.md cells for each row in the dataframe
-        mo.md("# Tier 3 Students\n\n")
+
         for index, row in tier_3_students.iterrows():
-            out += f"\n- **{row['StudentName']}** *{row['SchlPercentage']}%*"
+            out_t3 += f"\n- **{row['StudentName']}** *{row['SchlPercentage']}%*"
 
-        out += f"\n\nTotal Tier 3 Students: {len(tier_3_students)}"
+        out_t3 += f"\n\nTotal Tier 3 Students: {len(tier_3_students)}"
 
-        out += f"\n\n## Tier 2 Students"
+        out_t2 = f"\n\n## Tier 2 Students"
         tier_2_students = (
             yr_df[yr_df["Attendance Tier"] == "Tier 2"]
             .dropna(subset=["YearLevel"])
@@ -140,10 +140,11 @@ def _(mo, yr_df):
         )
 
         for index, row in tier_2_students.iterrows():
-            out += f"\n- **{row['StudentName']}** *{row['SchlPercentage']}%*"
-        out += f"\n\nTotal Tier 2 Students: {len(tier_2_students)}"
+            out_t2 += f"\n- **{row['StudentName']}** *{row['SchlPercentage']}%*"
+        out_t2 += f"\n\nTotal Tier 2 Students: {len(tier_2_students)}"
 
-    mo.md(out)
+
+    mo.hstack([mo.md(out_t3), mo.md(out_t2)])
     return tier_2_students, tier_3_students
 
 
