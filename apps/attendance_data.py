@@ -14,30 +14,44 @@ app = marimo.App(width="full", auto_download=["html"])
 
 @app.cell
 def _(mo):
-    csv_f = mo.ui.file(kind="area", label="Attendance CSV file", multiple=False)
-    csv_f
-    return (csv_f,)
+    csv_f = mo.ui.file(
+        kind="area",
+        label="Upload Compass Attendance CSV file here.",
+        multiple=False,
+    )
+    thresholds = mo.md("### Set Attendance Tier Thresholds (or leave as default)")
+    lower_thresh = mo.ui.slider(
+        label="Tier 3 Threshold", start=20, stop=80, value=60, show_value=True
+    )
+    upper_thresh = mo.ui.slider(
+        label="Tier 2 Threshold", start=60, stop=95, value=80, show_value=True
+    )
+
+    mo.hstack([csv_f, mo.vstack([thresholds, lower_thresh, upper_thresh])])
+    return csv_f, lower_thresh, upper_thresh
 
 
 @app.cell
-def _(StringIO, csv_f, pd):
+def _(StringIO, csv_f, lower_thresh, pd, upper_thresh):
     df = pd.DataFrame()
     if csv_f.name():
         byte_content = csv_f.contents()
         decoded_content = byte_content.decode("utf-8")
         df = pd.read_csv(StringIO(decoded_content))
-        df["Attendance Tier"] = df["SchlPercentage"].apply(categorize_attendance)
 
-
-    df
+        # Set thresholds from sliders
+        thresh_vals = (lower_thresh.value, upper_thresh.value)
+        df["Attendance Tier"] = df["SchlPercentage"].apply(
+            categorize_attendance, args=(thresh_vals,)
+        )
     return (df,)
 
 
 @app.function
-def categorize_attendance(percentage):
-    if percentage < 60:
+def categorize_attendance(percentage, thresholds):
+    if percentage < thresholds[0]:
         return "Tier 3"
-    elif 60 <= percentage <= 79:
+    elif thresholds[0] <= percentage < thresholds[1]:
         return "Tier 2"
     else:
         return "Tier 1"
@@ -56,19 +70,29 @@ def _(df, mo):
 
 
 @app.cell
-def _(df, px, yr_lvl_dropdown):
+def _(alt, df, yr_lvl_dropdown):
     if yr_lvl_dropdown.value:
-        yr_df = df[df["YearLevel"] == yr_lvl_dropdown.value]
+        yr_df = df[df["YearLevel"] == yr_lvl_dropdown.value].dropna(
+            subset=["YearLevel"]
+        )
     else:
-        yr_df = df
-
+        yr_df = df.dropna(subset=["YearLevel"])
+    attendance_tier_chart = None
     if len(yr_df) > 0:
-        px.histogram(
-            yr_df,
-            x="Attendance Tier",
-            title="Attendance Tier Distribution",
-            color="YearLevel",
-        ).show()
+        # Create a histogram to show Attendance Tier distribution
+        attendance_tier_chart = (
+            alt.Chart(yr_df)
+            .mark_bar()
+            .encode(
+                x=alt.X("Attendance Tier", title="Attendance Tier"),
+                y=alt.Y("count()", title="Count"),
+                color="YearLevel",
+                tooltip=["Attendance Tier", "count()"],
+            )
+            .properties(title="Attendance Tier Distribution")
+        )
+
+    attendance_tier_chart
     return (yr_df,)
 
 
@@ -97,7 +121,7 @@ def _(mo, yr_df):
         # Output mo.md cells for each row in the dataframe
         mo.md("# Tier 3 Students\n\n")
         for index, row in tier_3_students.iterrows():
-            out += f"- **{row['StudentName']}** *{row['SchlPercentage']}%*\n"
+            out += f"\n- **{row['StudentName']}** *{row['SchlPercentage']}%*"
 
         out += f"\n\nTotal Tier 3 Students: {len(tier_3_students)}"
 
@@ -109,10 +133,26 @@ def _(mo, yr_df):
         )
 
         for index, row in tier_2_students.iterrows():
-            out += f"- **{row['StudentName']}** *{row['SchlPercentage']}%*\n"
+            out += f"\n- **{row['StudentName']}** *{row['SchlPercentage']}%*"
         out += f"\n\nTotal Tier 2 Students: {len(tier_2_students)}"
 
     mo.md(out)
+    return tier_2_students, tier_3_students
+
+
+@app.cell
+def _(df, mo, tier_2_students, tier_3_students, yr_df):
+    if len(df) > 0:
+        mo.hstack(
+            [
+                mo.md("## Tier 3 Students (All Data)"),
+                tier_3_students,
+                mo.md("## Tier 2 Students (All Data)"),
+                tier_2_students,
+                mo.md("## Full Data Table (with Tier lists)"),
+                yr_df,
+            ]
+        )
     return
 
 
@@ -120,11 +160,9 @@ def _(mo, yr_df):
 def _():
     import marimo as mo
     import pandas as pd
-    import plotly.express as px
+    import altair as alt
     from io import StringIO
-
-    # < 60, 61 - 79, 80 +
-    return StringIO, mo, pd, px
+    return StringIO, alt, mo, pd
 
 
 if __name__ == "__main__":
