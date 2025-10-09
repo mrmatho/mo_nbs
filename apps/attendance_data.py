@@ -14,16 +14,19 @@ app = marimo.App(width="full", auto_download=["html"])
 
 @app.cell
 def _(mo):
-    mo.md("# Attendance Tier Analysis")
+    mo.md("""# Attendance Tier Analysis""")
     return
 
 
 @app.cell
 def _(mo):
-    mo.md("""The file you need is found in Compass > Whole School (or just a Year Level) > Attendance By Students > Export.
+    mo.md(
+        """
+    The file you need is found in Compass > Whole School (or just a Year Level) > Attendance By Students > Export.
 
     Don't forget to set the date range you want first!
-    """)
+    """
+    )
     return
 
 
@@ -36,14 +39,37 @@ def _(mo):
     )
     thresholds = mo.md("### Set Attendance Tier Thresholds (or leave as default)")
     lower_thresh = mo.ui.slider(
-        label="Tier 3 Threshold", start=20, stop=80, value=60, show_value=True
+        label="Tier 3 Threshold",
+        start=20,
+        stop=80,
+        value=60,
+        show_value=True,
+        include_input=True,
     )
     upper_thresh = mo.ui.slider(
-        label="Tier 2 Threshold", start=60, stop=95, value=80, show_value=True
+        label="Tier 2 Threshold",
+        start=60,
+        stop=95,
+        value=80,
+        show_value=True,
+        include_input=True,
     )
 
     mo.hstack([csv_f, mo.vstack([thresholds, lower_thresh, upper_thresh])])
     return csv_f, lower_thresh, upper_thresh
+
+
+@app.cell
+def _(lower_thresh, mo, upper_thresh):
+    mo.md(
+        f"""
+    **Attendance Threshold set as:**
+    - Tier 3: 0% - {lower_thresh.value - 1}%
+    - Tier 2: {lower_thresh.value}% - {upper_thresh.value - 1}%
+    - Tier 1: {upper_thresh.value}% and above
+    """
+    )
+    return
 
 
 @app.cell
@@ -86,35 +112,55 @@ def _(df, mo):
 
 
 @app.cell
-def _(alt, df, yr_lvl_dropdown):
-    if yr_lvl_dropdown.value:
+def _(alt, df, mo, pd, yr_lvl_dropdown):
+    yr_df = pd.DataFrame()
+    if len(df) > 0 and yr_lvl_dropdown.value:
         yr_df = df[df["YearLevel"] == yr_lvl_dropdown.value].dropna(
             subset=["YearLevel"]
         )
     else:
-        yr_df = df.dropna(subset=["YearLevel"])
+        yr_df = df
     attendance_tier_chart = None
+
     if len(yr_df) > 0:
-        # Create a histogram to show Attendance Tier distribution
-        attendance_tier_chart = (
-            alt.Chart(yr_df)
-            .mark_bar()
-            .encode(
-                x=alt.X("Attendance Tier", title="Attendance Tier"),
-                y=alt.Y("count()", title="Count"),
-                color="YearLevel",
-                tooltip=["Attendance Tier", "count()"],
-            )
-            .properties(title="Attendance Tier Distribution")
+        # Count the number of students in each attendance tier for each year level
+        tier_counts = (
+            yr_df.groupby(["YearLevel", "Attendance Tier"])
+            .size()
+            .reset_index(name="Count")
         )
 
-    attendance_tier_chart
+        # Calculate the total number of students per Year Level
+        total_counts = yr_df.groupby("YearLevel").size().reset_index(name="Total")
+
+        # Merge the counts with total counts and calculate percentages
+        tier_counts = tier_counts.merge(total_counts, on="YearLevel")
+        tier_counts["Percentage"] = (
+            tier_counts["Count"] / tier_counts["Total"]
+        ) * 100
+
+        # Create the Altair chart using percentages
+        attendance_tier_chart = (
+            alt.Chart(tier_counts)
+            .mark_bar()
+            .encode(
+                x=alt.X("Attendance Tier:N", title="Attendance Tier"),
+                y=alt.Y("Percentage:Q", title="Percentage"),
+                color="YearLevel:N",
+                tooltip=["Attendance Tier", "Count", "Percentage"],
+            )
+            .properties(title="Attendance Tier Percentage Distribution")
+        )
+
+    mo.ui.altair_chart(attendance_tier_chart)
     return (yr_df,)
 
 
 @app.cell
 def _(mo, yr_df):
     out_t3 = "## Tier 3 Students"
+
+    out_t2 = "\n\n## Tier 2 Students"
     if len(yr_df) > 0:
         # Tier 3 Student list
 
@@ -132,7 +178,6 @@ def _(mo, yr_df):
 
         out_t3 += f"\n\nTotal Tier 3 Students: {len(tier_3_students)}"
 
-        out_t2 = f"\n\n## Tier 2 Students"
         tier_2_students = (
             yr_df[yr_df["Attendance Tier"] == "Tier 2"]
             .dropna(subset=["YearLevel"])
@@ -142,7 +187,6 @@ def _(mo, yr_df):
         for index, row in tier_2_students.iterrows():
             out_t2 += f"\n- **{row['StudentName']}** *{row['SchlPercentage']}%*"
         out_t2 += f"\n\nTotal Tier 2 Students: {len(tier_2_students)}"
-
 
     mo.hstack([mo.md(out_t3), mo.md(out_t2)])
     return tier_2_students, tier_3_students
