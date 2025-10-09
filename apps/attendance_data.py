@@ -22,7 +22,7 @@ def _(mo):
 def _(mo):
     mo.md(
         """
-    The file you need is found in Compass > Whole School (or just a Year Level) > Attendance By Students > Export.
+    The file you need is found in *Compass > Whole School (or just a Year Level) > Attendance By Students > Export*.
 
     Don't forget to set the date range you want first!
     """
@@ -147,7 +147,7 @@ def _(alt, df, mo, pd, yr_lvl_dropdown):
                 x=alt.X("Attendance Tier:N", title="Attendance Tier"),
                 y=alt.Y("Percentage:Q", title="Percentage"),
                 color="YearLevel:N",
-                tooltip=["Attendance Tier", "Count", "Percentage"],
+                tooltip=["Attendance Tier", "Count", "Percentage", "YearLevel"],
             )
             .properties(title="Attendance Tier Percentage Distribution")
         )
