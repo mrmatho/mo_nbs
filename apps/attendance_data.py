@@ -14,7 +14,7 @@ app = marimo.App(width="full", auto_download=["html"])
 
 @app.cell
 def _(mo):
-    mo.md("""# Attendance Tier Analysis""")
+    mo.md("""#Compass Attendance Tier Analysis""")
     return
 
 
