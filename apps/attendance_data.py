@@ -100,14 +100,22 @@ def categorize_attendance(percentage, thresholds):
 
 @app.cell
 def _(df, mo):
+    print(list(df.columns))
     yr_lvl_dropdown = mo.md("Can't select a Year Level until you have data")
     if len(df) > 0:
-        yr_lvl_dropdown = mo.ui.dropdown(
-            label="Select Year Level",
-            options=df["YearLevel"].dropna().unique().tolist(),
-        )
+        if "YearLevel" in df.columns:
+            yr_lvl_dropdown = mo.ui.dropdown(
+                label="Select Year Level",
+                options=df["YearLevel"].dropna().unique().tolist(),
+            )
+        elif "Form" in df.columns:
+            yr_lvl_dropdown = mo.ui.dropdown(
+                label="Select Home Group", options=df["Form"]
+            )
+            df["YearLevel"] = df["Form"]
 
-    mo.vstack([mo.md("## Filter by Year Level"), yr_lvl_dropdown])
+
+    mo.vstack([mo.md("## Filter by Year Level or Form"), yr_lvl_dropdown])
     return (yr_lvl_dropdown,)
 
 
