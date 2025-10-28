@@ -39,9 +39,9 @@ def _(mo):
 @app.cell
 def _(caesar_cipher, caesar_decipher, encrypt, mo, shift_box, text_box):
     if encrypt.value:
-        out = mo.md(caesar_cipher(text_box.value, shift_box.value))
+        out = mo.md("##" + caesar_cipher(text_box.value, shift_box.value))
     else:
-        out = mo.md(caesar_decipher(text_box.value, shift_box.value))
+        out = mo.md("##" + caesar_decipher(text_box.value, shift_box.value))
 
     out
     return
