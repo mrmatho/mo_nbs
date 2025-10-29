@@ -48,6 +48,17 @@ def _(caesar_cipher, caesar_decipher, encrypt, mo, shift_box, text_box):
 
 
 @app.cell
+def _(caesar_cipher, mo, text_box):
+    # Output every possible option in a numbered markdown list
+    _out = ""
+    for _i in range(1, 26):
+        _out += f"1. {caesar_cipher(text_box.value, _i)} \n"
+
+    mo.md(_out)
+    return
+
+
+@app.cell
 def _():
     import marimo as mo
     return (mo,)
